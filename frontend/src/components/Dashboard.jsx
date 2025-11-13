@@ -11,6 +11,7 @@ import OverviewTab from './tabs/OverviewTab';
 import PerformanceTab from './tabs/PerformanceTab';
 import StorageTab from './tabs/StorageTab';
 import SQLTab from './tabs/SQLTab';
+import SystemResourcesTab from './tabs/SystemResourcesTab';
 
 function Dashboard({ metrics, activeTab, setActiveTab }) {
   if (!metrics) return null;
@@ -18,6 +19,7 @@ function Dashboard({ metrics, activeTab, setActiveTab }) {
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'performance', label: 'Performance' },
+    { id: 'system', label: 'System Resources' },
     { id: 'storage', label: 'Storage' },
     { id: 'sql', label: 'SQL Analysis' },
   ];
@@ -44,6 +46,7 @@ function Dashboard({ metrics, activeTab, setActiveTab }) {
       <div className="tab-content">
         {activeTab === 'overview' && <OverviewTab metrics={metrics} />}
         {activeTab === 'performance' && <PerformanceTab metrics={metrics} />}
+        {activeTab === 'system' && <SystemResourcesTab />}
         {activeTab === 'storage' && <StorageTab metrics={metrics} />}
         {activeTab === 'sql' && <SQLTab metrics={metrics} />}
       </div>

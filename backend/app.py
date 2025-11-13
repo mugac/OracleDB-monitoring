@@ -175,6 +175,168 @@ def fetch_metrics():
         return None
 
 
+def fetch_system_resources():
+    """Načte systémové zdroje (CPU, Memory, I/O) z Oracle DB"""
+    try:
+        conn = get_oracle_connection()
+        cur = conn.cursor()
+        
+        result = {
+            'timestamp': datetime.now().isoformat(),
+            'cpu': {},
+            'memory': {},
+            'io': {},
+            'load': {}
+        }
+        
+        # 1. CPU Utilization z V$OSSTAT
+        try:
+            cur.execute("""
+                SELECT STAT_NAME, VALUE 
+                FROM V$OSSTAT 
+                WHERE STAT_NAME IN ('BUSY_TIME', 'IDLE_TIME', 'NUM_CPUS', 'NUM_CPU_CORES', 
+                                    'PHYSICAL_MEMORY_BYTES', 'LOAD')
+            """)
+            os_stats = {row[0]: row[1] for row in cur}
+            
+            # CPU utilization calculation
+            busy_time = os_stats.get('BUSY_TIME', 0)
+            idle_time = os_stats.get('IDLE_TIME', 0)
+            total_time = busy_time + idle_time
+            
+            if total_time > 0:
+                cpu_utilization = round((busy_time / total_time) * 100, 2)
+            else:
+                cpu_utilization = 0
+            
+            result['cpu']['utilization_pct'] = cpu_utilization
+            result['cpu']['num_cpus'] = os_stats.get('NUM_CPUS', 0)
+            result['cpu']['num_cpu_cores'] = os_stats.get('NUM_CPU_CORES', 0)
+            result['cpu']['busy_time'] = busy_time
+            result['cpu']['idle_time'] = idle_time
+            result['load']['load_average'] = os_stats.get('LOAD', 0)
+            
+            # Physical memory
+            physical_memory_bytes = os_stats.get('PHYSICAL_MEMORY_BYTES', 0)
+            result['memory']['physical_memory_gb'] = round(physical_memory_bytes / (1024**3), 2)
+            
+        except Exception as e:
+            print(f"Warning: Could not fetch V$OSSTAT: {e}")
+        
+        # 2. CPU a Memory z V$SYSMETRIC (60-second average)
+        try:
+            cur.execute("""
+                SELECT METRIC_NAME, VALUE
+                FROM V$SYSMETRIC
+                WHERE GROUP_ID = 2
+                AND METRIC_NAME IN (
+                    'Host CPU Utilization (%)',
+                    'CPU Usage Per Sec',
+                    'CPU Usage Per Txn',
+                    'Database CPU Time Ratio',
+                    'Host CPU Usage Per Sec',
+                    'Physical Memory',
+                    'Physical Memory GB'
+                )
+            """)
+            sysmetrics = {row[0]: row[1] for row in cur}
+            
+            result['cpu']['host_cpu_utilization_pct'] = round(sysmetrics.get('Host CPU Utilization (%)', 0), 2)
+            result['cpu']['cpu_usage_per_sec'] = round(sysmetrics.get('CPU Usage Per Sec', 0), 2)
+            result['cpu']['db_cpu_time_ratio'] = round(sysmetrics.get('Database CPU Time Ratio', 0), 2)
+            
+        except Exception as e:
+            print(f"Warning: Could not fetch V$SYSMETRIC: {e}")
+        
+        # 3. DB CPU Time Model
+        try:
+            cur.execute("""
+                SELECT STAT_NAME, ROUND(VALUE/1000000, 2) as VALUE_SEC
+                FROM V$SYS_TIME_MODEL
+                WHERE STAT_NAME IN ('DB CPU', 'background cpu time', 'DB time')
+            """)
+            time_model = {row[0]: row[1] for row in cur}
+            
+            result['cpu']['db_cpu_time_sec'] = time_model.get('DB CPU', 0)
+            result['cpu']['background_cpu_time_sec'] = time_model.get('background cpu time', 0)
+            result['cpu']['db_time_sec'] = time_model.get('DB time', 0)
+            
+        except Exception as e:
+            print(f"Warning: Could not fetch V$SYS_TIME_MODEL: {e}")
+        
+        # 4. Memory Stats z V$SGASTAT
+        try:
+            cur.execute("""
+                SELECT POOL, SUM(BYTES)/(1024*1024) as MB
+                FROM V$SGASTAT
+                WHERE POOL IS NOT NULL
+                GROUP BY POOL
+            """)
+            memory_pools = [{'pool': row[0], 'size_mb': round(row[1], 2)} for row in cur]
+            result['memory']['sga_pools'] = memory_pools
+            
+            # Total SGA
+            cur.execute("SELECT ROUND(SUM(VALUE)/1024/1024, 2) FROM V$SGA")
+            result['memory']['total_sga_mb'] = cur.fetchone()[0]
+            
+        except Exception as e:
+            print(f"Warning: Could not fetch memory stats: {e}")
+        
+        # 5. PGA Memory
+        try:
+            cur.execute("""
+                SELECT NAME, ROUND(VALUE/1024/1024, 2) as MB
+                FROM V$PGASTAT
+                WHERE NAME IN ('total PGA allocated', 'total PGA inuse', 'maximum PGA allocated')
+            """)
+            pga_stats = {row[0]: row[1] for row in cur}
+            result['memory']['pga_allocated_mb'] = pga_stats.get('total PGA allocated', 0)
+            result['memory']['pga_inuse_mb'] = pga_stats.get('total PGA inuse', 0)
+            result['memory']['pga_max_allocated_mb'] = pga_stats.get('maximum PGA allocated', 0)
+            
+        except Exception as e:
+            print(f"Warning: Could not fetch PGA stats: {e}")
+        
+        # 6. I/O Stats
+        try:
+            cur.execute("""
+                SELECT METRIC_NAME, VALUE
+                FROM V$SYSMETRIC
+                WHERE GROUP_ID = 2
+                AND METRIC_NAME IN (
+                    'Physical Reads Per Sec',
+                    'Physical Writes Per Sec',
+                    'Physical Read Bytes Per Sec',
+                    'Physical Write Bytes Per Sec',
+                    'I/O Megabytes per Second',
+                    'I/O Requests per Second'
+                )
+            """)
+            io_metrics = {row[0]: row[1] for row in cur}
+            
+            result['io']['physical_reads_per_sec'] = round(io_metrics.get('Physical Reads Per Sec', 0), 2)
+            result['io']['physical_writes_per_sec'] = round(io_metrics.get('Physical Writes Per Sec', 0), 2)
+            result['io']['read_bytes_per_sec'] = round(io_metrics.get('Physical Read Bytes Per Sec', 0), 2)
+            result['io']['write_bytes_per_sec'] = round(io_metrics.get('Physical Write Bytes Per Sec', 0), 2)
+            result['io']['io_mb_per_sec'] = round(io_metrics.get('I/O Megabytes per Second', 0), 2)
+            result['io']['io_requests_per_sec'] = round(io_metrics.get('I/O Requests per Second', 0), 2)
+            
+        except Exception as e:
+            print(f"Warning: Could not fetch I/O stats: {e}")
+        
+        cur.close()
+        conn.close()
+        
+        return result
+        
+    except oracledb.Error as error:
+        print(f"❌ Oracle error in fetch_system_resources: {error}")
+        return None
+    except Exception as e:
+        print(f"❌ Unexpected error in fetch_system_resources: {e}")
+        return None
+
+
 @app.route('/api/health', methods=['GET'])
 def get_health():
     """Vrátí aktuální stav databáze"""
@@ -185,6 +347,18 @@ def get_health():
             'timestamp': datetime.now().isoformat()
         }), 500
     return jsonify(metrics)
+
+
+@app.route('/api/system-resources', methods=['GET'])
+def get_system_resources():
+    """Vrátí systémové zdroje (CPU, Memory, I/O)"""
+    resources = fetch_system_resources()
+    if resources is None:
+        return jsonify({
+            'error': 'Failed to fetch system resources from Oracle',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+    return jsonify(resources)
 
 
 @app.route('/api/ping', methods=['GET'])
@@ -205,7 +379,8 @@ def index():
         'version': '1.0.0',
         'endpoints': {
             '/api/ping': 'Health check',
-            '/api/health': 'Database metrics'
+            '/api/health': 'Database metrics',
+            '/api/system-resources': 'System resources (CPU, Memory, I/O)'
         }
     })
 
