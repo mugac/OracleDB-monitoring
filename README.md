@@ -127,18 +127,6 @@ npm run dev
 
 Open your browser and navigate to: `http://localhost:5173`
 
-## Stopping the Application
-
-### Using stop.bat (Windows)
-
-```bash
-stop.bat
-```
-
-### Manual Stop
-
-Press `Ctrl+C` in each terminal window running the backend and frontend.
-
 ## Project Structure
 
 ```
@@ -211,13 +199,6 @@ dbsmonitoring/
 - axios: ^1.6.2
 - recharts: ^3.4.1
 - vite: ^5.0.8
-
-## Development Notes
-
-- Application fetches real-time data without persistence
-- No Oracle Instant Client required (uses python-oracledb thin mode)
-- Designed for development and educational purposes
-- Auto-refresh intervals: 30 seconds (overview), 10 seconds (active SQL)
 
 ## License
 
