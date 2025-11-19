@@ -9,11 +9,12 @@ function App() {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [sqlLimit, setSqlLimit] = useState(50);
 
   const fetchData = async () => {
     try {
       setError(null);
-      const response = await axios.get('/api/health');
+      const response = await axios.get(`/api/health?sql_limit=${sqlLimit}`);
       setMetrics(response.data);
       setLastUpdate(new Date());
       setLoading(false);
@@ -28,7 +29,7 @@ function App() {
     // Refresh každých 30 sekund
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [sqlLimit]);
 
   return (
     <div className="app">
@@ -69,6 +70,8 @@ function App() {
             metrics={metrics} 
             activeTab={activeTab} 
             setActiveTab={setActiveTab}
+            sqlLimit={sqlLimit}
+            setSqlLimit={setSqlLimit}
           />
         )}
       </main>

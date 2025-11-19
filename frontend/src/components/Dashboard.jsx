@@ -1,6 +1,5 @@
 import SessionsCard from './SessionsCard';
 import WaitEventsTable from './WaitEventsTable';
-import TopSQLTable from './TopSQLTable';
 import SGAStatsTable from './SGAStatsTable';
 import TablespacesTable from './TablespacesTable';
 import SystemEventsTable from './SystemEventsTable';
@@ -10,18 +9,22 @@ import DatabaseInfo from './DatabaseInfo';
 import OverviewTab from './tabs/OverviewTab';
 import PerformanceTab from './tabs/PerformanceTab';
 import StorageTab from './tabs/StorageTab';
-import SQLTab from './tabs/SQLTab';
-import SystemResourcesTab from './tabs/SystemResourcesTab';
+import SessionsTab from './tabs/SessionsTab';
+import ActiveSQLTab from './tabs/ActiveSQLTab';
+import TableStatsTab from './tabs/TableStatsTab';
+import SQLQueryTab from './tabs/SQLQueryTab';
 
-function Dashboard({ metrics, activeTab, setActiveTab }) {
+function Dashboard({ metrics, activeTab, setActiveTab, sqlLimit, setSqlLimit }) {
   if (!metrics) return null;
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
+    { id: 'sessions', label: 'Sessions' },
+    { id: 'activesql', label: 'Active SQL' },
+    { id: 'tablestats', label: 'Table Stats' },
+    { id: 'sqlquery', label: 'SQL Query' },
     { id: 'performance', label: 'Performance' },
-    { id: 'system', label: 'System Resources' },
     { id: 'storage', label: 'Storage' },
-    { id: 'sql', label: 'SQL Analysis' },
   ];
 
   return (
@@ -45,10 +48,12 @@ function Dashboard({ metrics, activeTab, setActiveTab }) {
       {/* Tab Content */}
       <div className="tab-content">
         {activeTab === 'overview' && <OverviewTab metrics={metrics} />}
+        {activeTab === 'sessions' && <SessionsTab metrics={metrics} />}
+        {activeTab === 'activesql' && <ActiveSQLTab metrics={metrics} sqlLimit={sqlLimit} setSqlLimit={setSqlLimit} />}
+        {activeTab === 'tablestats' && <TableStatsTab metrics={metrics} />}
+        {activeTab === 'sqlquery' && <SQLQueryTab />}
         {activeTab === 'performance' && <PerformanceTab metrics={metrics} />}
-        {activeTab === 'system' && <SystemResourcesTab />}
         {activeTab === 'storage' && <StorageTab metrics={metrics} />}
-        {activeTab === 'sql' && <SQLTab metrics={metrics} />}
       </div>
     </div>
   );
