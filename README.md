@@ -7,6 +7,7 @@ Real-time monitoring dashboard for Oracle Database 23ai Free without Enterprise 
 This application provides a web-based monitoring interface for Oracle Database 23ai Free, featuring real-time metrics, session monitoring, performance statistics, and SQL query execution.
 
 **Key Features:**
+
 - Real-time database metrics and session monitoring
 - Active SQL and wait events tracking
 - Tablespace and storage management
@@ -15,6 +16,7 @@ This application provides a web-based monitoring interface for Oracle Database 2
 - No Oracle Instant Client required (uses python-oracledb thin mode)
 
 **Technology Stack:**
+
 - Backend: Python 3.9+, Flask, Flask-CORS, python-oracledb
 - Frontend: React 18, Vite, Recharts
 - Database: Oracle Database 23ai Free
@@ -110,6 +112,7 @@ This will start the backend on `http://localhost:5000` and frontend on `http://l
 Start backend and frontend in separate terminal windows:
 
 **Terminal 1 - Backend:**
+
 ```bash
 cd backend
 venv\Scripts\activate  # Windows
@@ -118,8 +121,10 @@ python app.py
 ```
 
 **Terminal 2 - Frontend:**
+
 ```bash
 cd frontend
+npm i # install dependencies
 npm run dev
 ```
 
