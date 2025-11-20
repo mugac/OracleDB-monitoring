@@ -105,7 +105,17 @@ start.bat
 
 This will start the backend on `http://localhost:5000` and frontend on `http://localhost:5173`.
 
-### Option 2: Manual Start (Recommended for Development)
+### Option 2: Using start.sh (Linux)
+
+The simplest way to start both backend and frontend:
+
+```bash
+./start.sh
+```
+
+This will start the backend on `http://localhost:5000` and frontend on `http://localhost:5173`.
+
+### Option 3: Manual Start (Recommended for Development)
 
 Start backend and frontend in separate terminal windows:
 
