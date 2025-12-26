@@ -1,0 +1,12 @@
+import os
+from dotenv import load_dotenv
+
+# Načtení .env souboru
+load_dotenv()
+
+class Config:
+    ORACLE_USER = os.getenv('ORACLE_USER', '{DB user}')
+    ORACLE_PASSWORD = os.getenv('ORACLE_PASSWORD', '{DB password}')
+    ORACLE_HOST = os.getenv('ORACLE_HOST', '{DB address}')
+    ORACLE_PORT = os.getenv('ORACLE_PORT', '{DB port}')
+    ORACLE_SERVICE = os.getenv('ORACLE_SERVICE', '{DB service name}')

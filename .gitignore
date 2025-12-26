@@ -38,3 +38,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
+TODO.md
+Dokumentace.md
+backend/config.py
